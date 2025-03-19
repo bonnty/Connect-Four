@@ -1,39 +1,53 @@
-//! By convention, main.zig is where your main function lives in the case that
-//! you are building an executable. If you are making a library, the convention
-//! is to delete this file and start with root.zig instead.
+const std = @import("std");
+
+const BoardWidth = 7;
+const BoardHeight = 6;
+const Player = enum { Alice, Bob };
+
+const GameState = enum {
+    InProgress,
+    Player1Win,
+    Player2Win,
+    Draw,
+};
+
+const GameBoard = struct {
+    // "" for empty, "X" for player 1, "O" for player 2
+    grid: [BoardHeight][BoardWidth]u8,
+    currentPlayer: Player,
+    movesPlayed: usize,
+    state: GameState,
+
+    pub fn init() GameBoard {
+        var board = GameBoard{
+            .grid = undefined,
+            .currentPlayer = Player.Alice,
+            .movesPlayed = 0,
+            .state = GameState.InProgress,
+        };
+
+        // Initialize empty board
+        for (0..BoardHeight) |row| {
+            for (0..BoardWidth) |col| {
+                board.grid[row][col] = ' ';
+            }
+        }
+        return board;
+    }
+
+    pub fn display(self: *const GameBoard) void {
+        for (0..BoardHeight) |row| {
+            std.debug.print("|", .{});
+            for (0..BoardWidth) |col| {
+                std.debug.print("{c}", .{self.grid[row][col]});
+                std.debug.print("|", .{});
+            }
+            std.debug.print("\n", .{});
+        }
+    }
+};
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
-
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
-
-    try bw.flush(); // Don't forget to flush!
+    var gameBoard = GameBoard.init();
+    gameBoard.display();
 }
-
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
-
-test "fuzz example" {
-    const Context = struct {
-        fn testOne(context: @This(), input: []const u8) anyerror!void {
-            _ = context;
-            // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
-            try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input));
-        }
-    };
-    try std.testing.fuzz(Context{}, Context.testOne, .{});
-}
-
-const std = @import("std");
