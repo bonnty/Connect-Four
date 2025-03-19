@@ -20,7 +20,7 @@ const GameBoard = struct {
 
     pub fn init() GameBoard {
         var board = GameBoard{
-            .grid = undefined,
+            .grid = [_][BoardWidth]u8{[_]u8{' '} ** BoardWidth} ** BoardHeight, // TODO: understand this
             .currentPlayer = Player.Alice,
             .movesPlayed = 0,
             .state = GameState.InProgress,
@@ -44,10 +44,52 @@ const GameBoard = struct {
             }
             std.debug.print("\n", .{});
         }
+
+        // Print the bottom
+        std.debug.print("+", .{});
+        for (0..BoardWidth) |_| {
+            std.debug.print("-+", .{});
+        }
+        std.debug.print("\n", .{});
+    }
+
+    pub fn makeMove(self: *GameBoard, column: usize) !bool {
+        if (column >= BoardWidth) {
+            return error.InvalidColumn;
+        }
+
+        // Find the first empty row in the selected column
+        var row: i8 = BoardHeight - 1;
+
+        while (row >= 0) {
+            if (self.grid[@intCast(row)][column] == ' ') {
+                self.grid[@intCast(row)][column] = if (self.currentPlayer == Player.Alice) 'X' else 'O';
+                self.movesPlayed += 1;
+                self.currentPlayer = if (self.currentPlayer == Player.Alice) Player.Bob else Player.Alice;
+                return true;
+            }
+            row -= 1;
+        }
+
+        // Column is full
+        return false;
     }
 };
 
 pub fn main() !void {
     var gameBoard = GameBoard.init();
+    gameBoard.display();
+    _ = try gameBoard.makeMove(1); // 1
+    _ = try gameBoard.makeMove(1); // 2
+    _ = try gameBoard.makeMove(1); // 3
+    _ = try gameBoard.makeMove(1); // 4
+    _ = try gameBoard.makeMove(1); // 5
+    _ = try gameBoard.makeMove(1); // 6
+    // should be false now
+    const success = try gameBoard.makeMove(1);
+    if (!success) {
+        std.debug.print("{any}\n", .{success});
+    }
+
     gameBoard.display();
 }
